@@ -28,7 +28,7 @@
 
     <groupId>com.github.pagehelper</groupId>
     <artifactId>pagehelper</artifactId>
-    <version>6.1.0</version>
+    <version>6.1.11-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>pagehelper 6</name>
@@ -50,9 +50,11 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git@github.com:pagehelper/Mybatis-PageHelper.git</connection>
-        <developerConnection>scm:git:git@github.com:pagehelper/Mybatis-PageHelper.git</developerConnection>
-        <url>git@github.com:pagehelper/Mybatis-PageHelper.git</url>
+        <connection>scm:git:https://github.com/chenjing-pacvue/Mybatis-PageHelper.git</connection>
+        <developerConnection>scm:git:https://github.com/chenjing-pacvue/Mybatis-PageHelper.git
+        </developerConnection>
+        <url>https://github.com/chenjing-pacvue/Mybatis-PageHelper.git</url>
+        <tag>pageHelper-pacvue</tag>
     </scm>
 
     <properties>
@@ -193,37 +195,47 @@
         </dependency>
         -->
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>15</source>
+                    <target>15</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <distributionManagement>
+        <repository>
+            <id>releases</id>
+            <name>Nexus release</name>
+            <url>
+                https://nexus.pacvue.com/repository/maven-releases/
+            </url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>Nexus snapshot</name>
+            <url>
+                https://nexus.pacvue.com/repository/maven-snapshots/
+            </url>
+        </snapshotRepository>
+    </distributionManagement>
     <profiles>
         <profile>
             <id>release</id>
             <build>
                 <plugins>
-                    <!--Compiler-->
-                    <plugin>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                    </plugin>
-                    <!-- Source -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>jar-no-fork</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
+
                     <!-- Javadoc -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>3.2.0</version>
                         <configuration>
-                            <additionalOptions>
-                                <additionalOption>-Xdoclint:none</additionalOption>
-                            </additionalOptions>
+                            <skip>true</skip>
                         </configuration>
                         <executions>
                             <execution>
@@ -235,47 +247,10 @@
                         </executions>
                     </plugin>
                     <!-- GPG mvn clean deploy -P release -Dgpg.passphrase=YourPassphase-->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <gpgArguments>
-                                <argument>--pinentry-mode</argument>
-                                <argument>loopback</argument>
-                            </gpgArguments>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <serverId>ossrh</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        </configuration>
-                    </plugin>
+
                 </plugins>
             </build>
-            <distributionManagement>
-                <snapshotRepository>
-                    <id>ossrh</id>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-                </snapshotRepository>
-                <repository>
-                    <id>ossrh</id>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                </repository>
-            </distributionManagement>
+
         </profile>
     </profiles>
 </project>

@@ -208,6 +208,28 @@ public class DefaultCountSqlParser implements CountSqlParser {
         return true;
     }
 
+    public static boolean containsOrderByAndLimit(String sql) {
+        String normalizedSql = sql.replaceAll("\\s+", " ").toLowerCase();
+        int orderByIndex = normalizedSql.indexOf("order by");
+        int limitIndex = normalizedSql.indexOf("limit");
+        int selectIndex = normalizedSql.indexOf("select", orderByIndex);
+
+        return orderByIndex != -1 && limitIndex != -1 && orderByIndex < limitIndex && (selectIndex == -1 || selectIndex > limitIndex);
+    }
+
+    public static boolean containsOrderByAndWith(String sql) {
+        String normalizedSql = sql.replaceAll("\\s+", " ").toLowerCase();
+        int orderByIndex = normalizedSql.indexOf("order by");
+        int limitIndex = normalizedSql.indexOf("with");
+        int selectIndex = normalizedSql.indexOf("select", orderByIndex);
+
+        return orderByIndex != -1 && limitIndex != -1 && orderByIndex < limitIndex && (selectIndex == -1 || selectIndex > limitIndex);
+    }
+
+    public static boolean containsUniqCKOrderBy(String sql) {
+        return containsOrderByAndWith(sql) || containsOrderByAndLimit(sql);
+    }
+
     /**
      * 处理selectBody去除Order by
      *
@@ -216,13 +238,31 @@ public class DefaultCountSqlParser implements CountSqlParser {
     public void processSelect(Select select) {
         if (select != null) {
             if (select instanceof PlainSelect) {
+                //判断是否是最外层查询（只有一个select 关键字），最外层不做操作。否则，判断是否需要去除order by
+                if (
+                    //子查询特殊语法，保留order by
+                    (select.toString().trim().toLowerCase().split("select ").length <=2)
+                    && containsUniqCKOrderBy(select.toString())) {
+
+                } else {
+                    //父查询，去除
+                    if (!this.orderByHashParameters(select.getOrderByElements())) {
+                        select.setOrderByElements((List)null);
+                    }
+                }
                 processPlainSelect((PlainSelect) select);
+
             } else if (select instanceof ParenthesedSelect) {
-                processSelect(((ParenthesedSelect) select).getSelect());
+                Select select1 = ((ParenthesedSelect) select).getSelect();
+                if (!containsUniqCKOrderBy(select1.toString())) {
+                    processSelect(select1);
+                }
             } else if (select instanceof SetOperationList) {
                 List<Select> selects = ((SetOperationList) select).getSelects();
                 for (Select sel : selects) {
-                    processSelect(sel);
+                    if (!containsUniqCKOrderBy(sel.toString())) {
+                        processSelect(sel);
+                    }
                 }
                 if (!orderByHashParameters(select.getOrderByElements())) {
                     select.setOrderByElements(null);
@@ -245,20 +285,23 @@ public class DefaultCountSqlParser implements CountSqlParser {
      * @param plainSelect
      */
     public void processPlainSelect(PlainSelect plainSelect) {
-        if (!orderByHashParameters(plainSelect.getOrderByElements())) {
-            plainSelect.setOrderByElements(null);
-        }
+
         if (plainSelect.getFromItem() != null) {
-            processFromItem(plainSelect.getFromItem());
+            this.processFromItem(plainSelect.getFromItem());
         }
+
         if (plainSelect.getJoins() != null && plainSelect.getJoins().size() > 0) {
             List<Join> joins = plainSelect.getJoins();
-            for (Join join : joins) {
+            Iterator var3 = joins.iterator();
+
+            while(var3.hasNext()) {
+                Join join = (Join)var3.next();
                 if (join.getRightItem() != null) {
-                    processFromItem(join.getRightItem());
+                    this.processFromItem(join.getRightItem());
                 }
             }
         }
+
     }
 
     /**
